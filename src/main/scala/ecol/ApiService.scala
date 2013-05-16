@@ -6,59 +6,85 @@ import spray.http._
 import MediaTypes._
 import spray.json._
 import MySprayJsonSupport._
+import java.util.Date
+import java.text.SimpleDateFormat
+import ecol.cassandra.AstyanaxConnector
+import ecol.cassandra.TemperatureLogJsonProtocol._
 
 
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
-class ApiServiceActor extends Actor with PutService with GetService {
+class ApiServiceActor extends Actor with PutService with GetService with PostService {
 
   // the HttpService trait defines only one abstract member, which
   // connects the services environment to the enclosing actor or test
   def actorRefFactory = context
 
-  // this actor only runs our route, but you could add
-  // other things here, like request stream processing
-  // or timeout handling
-  def receive = runRoute(putRoute ~ getRoute)
+  AstyanaxConnector.init() // initialize the DB connector
+  
+  def receive = runRoute(getRoute ~ postRoute ~ putRoute)
 }
 
+trait PostService extends HttpService {
 
-// this trait defines our service behavior independently from the service actor
+  val postRoute =
+    pathPrefix("api" / "1.0") {
+	  respondWithMediaType(`application/json`) {
+	    post {
+		  path("") {
+			entity(as[JsObject]) { data =>
+				println(data)
+				complete {
+				  AstyanaxConnector.insertTemperature("20.11")
+				  val source = "{ \"status\": \"POST successful\" }"
+				  source.asJson.asJsObject
+				}
+			}
+		  }
+	    }
+	  }
+  	}
+
+}
+
 trait PutService extends HttpService {
-  //import DefaultJsonProtocol._
 
   val putRoute =
-    path("") {
-      put {
-        respondWithMediaType(`application/json`) {
-          complete {
-            /*<html>
-              <body>
-                <h1>You PUT something!</h1>
-              </body>
-            </html>*/
-            val source = "{ \"status\": \"PUT successful\" }"
-            source.asJson.asJsObject
-          }
-        }
-      }
-    }
+    pathPrefix("api" / "1.0") {
+	  respondWithMediaType(`application/json`) {
+	    put {
+	    	path("") {
+			  entity(as[JsObject]) { data =>
+			    println(data)
+			    complete {
+			    	val source = "{ \"status\": \"PUT successful\" }"
+			    	source.asJson.asJsObject
+			    }
+	          }
+	        }
+	      }
+	   }
+  	}
 
 }
 
 trait GetService extends HttpService {
 
   val getRoute =
-    path("") {
-      get {
-        respondWithMediaType(`application/json`) {
-          complete {
-            val source = "{ \"status\": \"GET successful\" }"
-            source.asJson.asJsObject            
-          }
-        }
-      }
+    pathPrefix("api" / "1.0") {
+	  respondWithMediaType(`application/json`) {
+	    get {
+	    	path("") {
+	    		complete {
+	    			val temps = AstyanaxConnector.getTemperatureByTimeRange
+	    			val jArr = JsArray(temps.map(_.toJson))
+	    			val jsonData = "{ \"items\": "+ jArr.toString +" }"
+					jsonData.asJson.asJsObject            
+				  }
+			  }
+		  }
+	  	}
     }
 
 }
