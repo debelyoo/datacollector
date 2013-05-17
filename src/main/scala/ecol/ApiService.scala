@@ -77,18 +77,29 @@ trait GetService extends HttpService {
     pathPrefix("api" / "1.0") {
 	  respondWithMediaType(`application/json`) {
 	    get {
-	    	path("temperature") {
-	    		complete {
-	    		  val date1 = new SimpleDateFormat("yyyyMMdd-HHmmss").parse("20130517-090000")
-	    		  val date2 = new SimpleDateFormat("yyyyMMdd-HHmmss").parse("20130518-190000")
-	    		  val temps = AstyanaxConnector.getTemperatureByTimeRangeAndSensor(
-	    		      timeRange = Some((date1, date2)),
-	    		      sensorAddresses = Some(Seq("address1", "address3"))
+	    	pathPrefix("temperature") {
+	    	  pathPrefix("from" / PathElement) { startTime =>
+	    	    path("to" / PathElement) { endTime => 
+	    		  complete {
+	    		    try {
+	    		      val date1 = new SimpleDateFormat("yyyyMMdd-HHmmss").parse(startTime)
+	    		      val date2 = new SimpleDateFormat("yyyyMMdd-HHmmss").parse(endTime)
+	    		      val temps = AstyanaxConnector.getTemperatureByTimeRangeAndSensor(
+	    		        timeRange = Some((date1, date2)),
+	    		        sensorAddresses = Some(Seq("address1", "address3"))
 	    		      )
-	    		  val jArr = JsArray(temps.map(_.toJson))
-	    		  val jsonData = "{ \"items\": "+ jArr.toString +", \"count\": \""+ temps.length +"\" }"
-				  jsonData.asJson.asJsObject            
+	    		      val jArr = JsArray(temps.map(_.toJson))
+	    		      val jsonData = "{ \"items\": "+ jArr.toString +", \"count\": \""+ temps.length +"\" }"
+				      jsonData.asJson.asJsObject
+	    		    } catch {
+	    		      case ex: Exception => {
+	    		        val source = "{ \"error\": \"parameters are badly formatted\" }"
+	    		        source.asJson.asJsObject            
+	    		      }
+	    		    }
+	    		  }
 				}
+	    	  }
 			} ~
 			path("temp") {
 	    		complete {

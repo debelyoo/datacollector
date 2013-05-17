@@ -124,9 +124,9 @@ object AstyanaxConnector extends UUIDHelper {
     val dayStr = dayFormatter.format(new Date())
     val rowKeys = getRowKeysForRange(timeRange)
     //println(rowKeys)
-    val rangeMin = rowKeys.head + "0000" // yyyyMMdd-HHmmss
-    val rangeMax = rowKeys.last +  "0000"
-    //println("min: "+rangeMin+", max: "+rangeMax)
+    val rangeMin = rowKeys.head + minSecFormatter.format(timeRange.get._1) // yyyyMMdd-HHmmss
+    val rangeMax = rowKeys.last +  minSecFormatter.format(timeRange.get._2)
+    println("min: "+rangeMin+", max: "+rangeMax)
     val uuid1 = uuidForDate(dateTimeFormatter.parse(rangeMin))
     val uuid2 = uuidForDate(dateTimeFormatter.parse(rangeMax))
     val result = keyspace.prepareQuery(CF_TEMPERATURE)
@@ -185,7 +185,9 @@ object AstyanaxConnector extends UUIDHelper {
       val rowKeys = days.toList.map(day => 
         for {
           i <- 0 to 23
-          if ((day != day1 && day != day2) || (i >= minHourDay1 && day == day1) || (i <= maxHourDay2 && day == day2))
+          if ((day != day1 && day != day2) || 
+              (day1 != day2 && ((i >= minHourDay1 && day == day1) || (i <= maxHourDay2 && day == day2))) ||
+               (day1 == day2 && i >= minHourDay1 && i <= maxHourDay2))
         } yield {
           //val hourOffset = 8
           day + "-" + "%02d".format(i)
