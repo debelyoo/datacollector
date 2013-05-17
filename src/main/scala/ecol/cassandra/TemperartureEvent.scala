@@ -4,6 +4,9 @@ import com.netflix.astyanax.annotations.Component
 import java.util.UUID
 import spray.json._
 
+/**
+ * Defines the composite type for the columns in temperature CF
+ */
 class TemperatureEvent(@Component(ordinal=0) ts: UUID, @Component(ordinal=1) sensorAddress: String) {
 
   /**
@@ -16,13 +19,14 @@ class TemperatureEvent(@Component(ordinal=0) ts: UUID, @Component(ordinal=1) sen
   def getSensorAddress: String = sensorAddress
 }
 
-case class TemperatureLog(ts: String, sensorAddress: String, temperature: String) {
-  /*def toJson: JsValue = {
-    val jsStr = "{ \"timestamp\": \""+ ts +"\", \"sensor_address\": \""+ sensorAddress +"\", \"value\": \""+ temperature +"\" }"
-    jsStr.asJson
-  }*/
-}
+/**
+ * The object representing a temperature record (timestamp, sensor address, temperature value)
+ */
+case class TemperatureLog(ts: String, sensorAddress: String, temperature: String)
 
+/**
+ * Convert The TemperatureLog class in JSON object
+ */
 object TemperatureLogJsonProtocol extends DefaultJsonProtocol {
   implicit val temperatureLogFormat = jsonFormat3(TemperatureLog)
 }

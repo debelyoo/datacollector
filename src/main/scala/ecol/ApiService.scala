@@ -10,6 +10,8 @@ import java.util.Date
 import java.text.SimpleDateFormat
 import ecol.cassandra.AstyanaxConnector
 import ecol.cassandra.TemperatureLogJsonProtocol._
+import ecol.test.DataPusher
+import ecol.cassandra.Message
 
 
 
@@ -36,7 +38,7 @@ trait PostService extends HttpService {
 			entity(as[JsObject]) { data =>
 				println(data)
 				complete {
-				  AstyanaxConnector.insertTemperature("20.11")
+				  AstyanaxConnector.insertWorker ! Message.InsertTemperature(new Date(), "address1", "20.11")
 				  val source = "{ \"status\": \"POST successful\" }"
 				  source.asJson.asJsObject
 				}
@@ -75,16 +77,37 @@ trait GetService extends HttpService {
     pathPrefix("api" / "1.0") {
 	  respondWithMediaType(`application/json`) {
 	    get {
-	    	path("") {
+	    	path("temperature") {
 	    		complete {
-	    			val temps = AstyanaxConnector.getTemperatureByTimeRange
-	    			val jArr = JsArray(temps.map(_.toJson))
-	    			val jsonData = "{ \"items\": "+ jArr.toString +" }"
-					jsonData.asJson.asJsObject            
-				  }
-			  }
-		  }
-	  	}
-    }
+	    		  val date1 = new SimpleDateFormat("yyyyMMdd-HHmmss").parse("20130517-090000")
+	    		  val date2 = new SimpleDateFormat("yyyyMMdd-HHmmss").parse("20130518-190000")
+	    		  val temps = AstyanaxConnector.getTemperatureByTimeRangeAndSensor(
+	    		      timeRange = Some((date1, date2)),
+	    		      sensorAddresses = Some(Seq("address1", "address3"))
+	    		      )
+	    		  val jArr = JsArray(temps.map(_.toJson))
+	    		  val jsonData = "{ \"items\": "+ jArr.toString +", \"count\": \""+ temps.length +"\" }"
+				  jsonData.asJson.asJsObject            
+				}
+			} ~
+			path("temp") {
+	    		complete {
+	    		  val temps = AstyanaxConnector.getTemperature
+	    		  println(temps)
+	    		  val source = "{ \"status\": \"get returned !\" }"
+			      source.asJson.asJsObject            
+				}
+			} ~
+	    	path("test") {
+	    		complete {
+	    		  val dp = new DataPusher()
+	    		  dp.pushSampleData
+				  val source = "{ \"status\": \"test terminated\" }"
+			      source.asJson.asJsObject
+				}
+			}
+		}
+	 }
+   }
 
 }
