@@ -5,6 +5,11 @@ import java.util.UUID
 
 trait UUIDHelper {
 
+  /**
+   * Create a time-based UUID for a specific date
+   * @param d The date
+   * @return A time-based UUID
+   */
   def uuidForDate(d: Date): UUID = {
 	/*
 	  http://stackoverflow.com/questions/15179428/it-is-possible-to-convert-uuid-to-date-using-java
@@ -22,6 +27,12 @@ trait UUIDHelper {
     new java.util.UUID(upperLong, 0xC000000000000000L)
   }
   
+  /**
+   * Convert a UUID timestamp to a date timestamp
+   * This function is used to get the date from a UUID timestamp (stored in Cassandra)
+   * @param ts The timestamp of the UUID
+   * @return A timestamp in Date format
+   */
   def uuidTsToDateTs(ts: Long): Long = {
     val tsMilli = math.round(ts.toDouble / 10000.toDouble)
     tsMilli - 12219292800L

@@ -1,4 +1,4 @@
-package ecol.cassandra
+package ecol.util
 
 import java.util.Date
 

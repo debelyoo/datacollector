@@ -1,4 +1,4 @@
-package ecol.cassandra
+package ecol.cassandra.composite
 
 import com.netflix.astyanax.annotations.Component
 import java.util.UUID
@@ -17,16 +17,4 @@ class TemperatureEvent(@Component(ordinal=0) ts: UUID, @Component(ordinal=1) sen
   
   def getTs: UUID = ts 
   def getSensorAddress: String = sensorAddress
-}
-
-/**
- * The object representing a temperature record (timestamp, sensor address, temperature value)
- */
-case class TemperatureLog(ts: String, sensorAddress: String, temperature: String)
-
-/**
- * Convert The TemperatureLog class in JSON object
- */
-object TemperatureLogJsonProtocol extends DefaultJsonProtocol {
-  implicit val temperatureLogFormat = jsonFormat3(TemperatureLog)
 }

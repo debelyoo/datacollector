@@ -2,9 +2,9 @@ package ecol.test
 
 import scala.util.Random._
 import ecol.cassandra.AstyanaxConnector
-import ecol.cassandra.Message
 import java.util.Date
 import java.text.SimpleDateFormat
+import ecol.util.Message
 
 class DataPusher {
   val NB_VALUES = 1000
