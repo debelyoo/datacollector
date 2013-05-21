@@ -24,5 +24,4 @@ class DataPusher {
       AstyanaxConnector.insertWorker ! Message.InsertTemperature(tempDate, "address" + addressId, tempStr)
     }
   }
-
 }

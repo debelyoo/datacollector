@@ -35,6 +35,11 @@ trait PostService extends HttpService {
 				      MalformedRequestContentRejection("bad JSON formatting")
 				    }
 				  }
+				  case pe: java.text.ParseException => {
+				    reject {
+				      MalformedRequestContentRejection("bad timestamp formatting")
+				    }
+				  }
 				  case ex: Exception => {
 				    ex.printStackTrace()
 				    reject {

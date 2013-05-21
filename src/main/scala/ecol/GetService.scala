@@ -18,37 +18,46 @@ trait GetService extends HttpService {
 	    get {
 	    	pathPrefix("temperature") {
 	    	  pathPrefix("from" / PathElement) { startTime =>
-	    	    path("to" / PathElement) { endTime => 
-	    		  complete {
-	    		    try {
-	    		      val date1 = dateTimeFormatter.parse(startTime)
-	    		      val date2 = dateTimeFormatter.parse(endTime)
-	    		      val temps = TemperatureLog.getTemperatureByTimeRangeAndSensor(
-	    		        timeRange = Some((date1, date2)),
-	    		        sensorAddresses = Some(Seq("address1", "address3"))
-	    		      )
-	    		      val jArr = JsArray(temps.map(_.toJson))
-	    		      val jsonData = "{ \"items\": "+ jArr.toString +", \"count\": \""+ temps.length +"\" }"
-				      jsonData.asJson.asJsObject
-	    		    } catch {
-	    		      case ex: Exception => {
-	    		        val source = "{ \"error\": \"parameters are badly formatted\" }"
-	    		        source.asJson.asJsObject            
+	    	    pathPrefix("to" / PathElement) { endTime => 
+	    	      path("forAddress" / PathElement) { addresses => 
+	    		    complete {
+	    		      try {
+	    		        val date1 = dateTimeFormatter.parse(startTime)
+	    		        val date2 = dateTimeFormatter.parse(endTime)
+	    		        val adr = addresses.split("-").toSeq
+	    		        val temps = TemperatureLog.getTemperatureByTimeRangeAndSensor(
+	    		          timeRange = Some((date1, date2)),
+	    		          sensorAddresses = Some(adr)
+	    		        )
+	    		        val jArr = JsArray(temps.map(_.toJson))
+	    		        val jsonData = "{ \"items\": "+ jArr.toString +", \"count\": \""+ temps.length +"\" }"
+				        jsonData.asJson.asJsObject
+	    		      } catch {
+	    		        case ex: Exception => {
+	    		          val source = "{ \"error\": \"parameters are badly formatted\" }"
+	    		          source.asJson.asJsObject            
+	    		        }
 	    		      }
 	    		    }
-	    		  }
+	    	      }
 				}
 	    	  }
 			} ~
-			path("temp") {
+			/*path("temp") {
 	    		complete {
 	    		  val temps = TemperatureLog.getTemperature
 	    		  println(temps)
 	    		  val source = "{ \"status\": \"get returned !\" }"
 			      source.asJson.asJsObject            
 				}
-			} ~
-	    	path("test") {
+			} ~*/
+	    	path("ping") {
+	    		complete {
+				  val source = "{ \"status\": \"server is UP !\" }"
+			      source.asJson.asJsObject
+				}
+			} ~ 
+			path("test") {
 	    		complete {
 	    		  val dp = new DataPusher()
 	    		  dp.pushSampleData
