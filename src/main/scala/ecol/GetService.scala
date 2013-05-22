@@ -10,6 +10,8 @@ import ecol.cassandra.model.TemperatureLog
 import ecol.cassandra.model.TemperatureLogJsonProtocol._
 import ecol.test.DataPusher
 import spray.routing.MalformedRequestContentRejection
+import ecol.util.DateFormatHelper._
+import java.util.Date
 
 trait GetService extends HttpService {
 
@@ -68,8 +70,11 @@ trait GetService extends HttpService {
 			} ~ 
 			path("test") {
 	    		complete {
-	    		  val dp = new DataPusher()
-	    		  dp.pushSampleData
+	    		  //val dp = new DataPusher()
+	    		  //dp.pushSampleData
+	    		  val tsRef = 3451386804.00000000 // nb of seconds from 1.1.1904
+	    		  val valueDate = labViewTsToJavaDate(tsRef)
+	    		  println(valueDate)
 				  val source = "{ \"status\": \"test terminated\" }"
 			      source.asJson.asJsObject
 				}

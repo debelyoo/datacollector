@@ -24,6 +24,7 @@ trait PostService extends HttpService {
 				try {
 				  val tl = data.convertTo[TemperatureLog]
 				  val date = dateTimeFormatter.parse(tl.ts)
+				  //val date = labViewTsToJavaDate(tl.ts.toDouble) // if TS comes from labview
 				  AstyanaxConnector.insertWorker ! Message.InsertTemperature(date, tl.sensorAddress, tl.temperature)
 				  complete {
 				    val resp = "{ \"status\": \"POST successful\" }"
