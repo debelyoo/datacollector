@@ -9,6 +9,7 @@ import ecol.util.DateFormatHelper._
 import ecol.cassandra.model.TemperatureLog
 import ecol.cassandra.model.TemperatureLogJsonProtocol._
 import ecol.test.DataPusher
+import spray.routing.MalformedRequestContentRejection
 
 trait GetService extends HttpService {
 
@@ -20,23 +21,31 @@ trait GetService extends HttpService {
 	    	  pathPrefix("from" / PathElement) { startTime =>
 	    	    pathPrefix("to" / PathElement) { endTime => 
 	    	      path("forAddress" / PathElement) { addresses => 
-	    		    complete {
-	    		      try {
-	    		        val date1 = dateTimeFormatter.parse(startTime)
-	    		        val date2 = dateTimeFormatter.parse(endTime)
-	    		        val adr = addresses.split("-").toSeq
-	    		        val temps = TemperatureLog.getTemperatureByTimeRangeAndSensor(
-	    		          timeRange = Some((date1, date2)),
-	    		          sensorAddresses = Some(adr)
-	    		        )
-	    		        val jArr = JsArray(temps.map(_.toJson))
-	    		        val jsonData = "{ \"items\": "+ jArr.toString +", \"count\": \""+ temps.length +"\" }"
+	    		    try {
+	    		      val optAddr = if (addresses == "all") None else Some(addresses)
+	    		      val temps = requestTemperature(startTime, endTime, optAddr)
+	    		      assert(temps.isDefined)
+	    		      val jArr = JsArray(temps.get.map(_.toJson))
+	    		      complete {
+	    		        val jsonData = "{ \"items\": "+ jArr.toString +", \"count\": \""+ temps.get.length +"\" }"
 				        jsonData.asJson.asJsObject
-	    		      } catch {
-	    		        case ex: Exception => {
-	    		          val source = "{ \"error\": \"parameters are badly formatted\" }"
-	    		          source.asJson.asJsObject            
-	    		        }
+	    		      }
+	    		    } catch {
+	    		      case ae: AssertionError => {
+	    		        reject {
+	    		    	  MalformedRequestContentRejection("bad timestamp formatting")
+	    		    	}
+	    		      }
+	    		      case pe: java.text.ParseException => {
+	    		    	reject {
+	    		    	  MalformedRequestContentRejection("bad timestamp formatting")
+	    		    	}
+	    		      }
+	    		      case ex: Exception => {
+	    		        ex.printStackTrace()
+	    		        reject {
+	    		          MalformedRequestContentRejection("unknown error")
+	    		        }            
 	    		      }
 	    		    }
 	    	      }
@@ -68,5 +77,27 @@ trait GetService extends HttpService {
 		}
 	 }
    }
+  
+  /**
+   * Request temperature logs
+   * @param startTime The start time of the query window
+   * @param endTime The end time of the query window
+   * @param addresses The addresses to get (dash separated: addr1-addr2)
+   * @return A list with the temperature logs (in an option)
+   */
+  def requestTemperature(startTime: String, endTime: String, addresses: Option[String]): Option[List[TemperatureLog]] = {
+    if (startTime.length() != 15 || endTime.length() != 15)
+      None
+    else {
+      val date1 = dateTimeFormatter.parse(startTime)
+	  val date2 = dateTimeFormatter.parse(endTime)
+	  val addr = addresses.map(_.split("-").toSeq)
+	  val temps = TemperatureLog.getTemperatureByTimeRangeAndSensor(
+	    timeRange = Some((date1, date2)),
+	    sensorAddresses = addr
+	  )
+	  Some(temps)
+    }
+  }
 
 }
