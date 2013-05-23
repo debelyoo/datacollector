@@ -6,9 +6,10 @@ import ecol.cassandra.model.TemperatureLog
 class InsertWorker extends Actor {
 
   def receive = {
-    case Message.InsertTemperature(ts, sensorAddress, temperatureValue) => {
+    case Message.InsertTemperature(ts, sensor, temperatureValue) => {
       //println("[RCV message] - insert temperature: "+temperatureValue+", "+ sensorAddress)
-      TemperatureLog.insertTemperature(ts, sensorAddress, temperatureValue)
+      //sensor.insertInDatabase
+      TemperatureLog.insertTemperature(ts, sensor, temperatureValue)
     }
   }
 }

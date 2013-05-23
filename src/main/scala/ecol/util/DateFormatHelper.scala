@@ -11,7 +11,7 @@ object DateFormatHelper {
 	val temperatureRowKeyFormatter = new SimpleDateFormat("yyyyMMdd-HH")
 	
 	/**
-	 * Convert a labview timestamp to Java Date
+	 * Convert a labview timestamp to Java Date (in time zone UTC+01:00)
 	 * @param labviewTs The timestamp in labview time reference (nb of seconds from 1.1.1904) UTC
 	 * @return The corresponding date in Java time reference
 	 */

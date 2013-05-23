@@ -15,11 +15,13 @@ import com.netflix.astyanax.model.Equality
 import java.util.Calendar
 import spray.json.RootJsonFormat
 import spray.json._
+import java.util.UUID
+import ecol.cassandra.model.SensorJsonProtocol._
 
 /**
- * The object representing a temperature record (timestamp, sensor address, temperature value)
+ * The object representing a temperature record (timestamp, sensor, temperature value)
  */
-case class TemperatureLog(ts: String, sensorAddress: String, temperature: String)
+case class TemperatureLog(ts: String, sensor: Sensor, temperature: String)
 
 object TemperatureLog extends UUIDHelper {
   
@@ -33,19 +35,16 @@ object TemperatureLog extends UUIDHelper {
   /**
    * Insert a temperature in database
    * @param tempDate The date of the temperature's measure
-   * @param sensorAddress The address of the sensor
+   * @param sensorId The id of the sensor
    * @param tempValue The temperature value
    * @return true if success 
    */
-  def insertTemperature(tempDate: Date, sensorAddress: String, tempValue: String): Boolean = {  
+  def insertTemperature(tempDate: Date, sensor: Sensor, tempValue: String): Boolean = {  
     val m = AstyanaxConnector.keyspace.prepareMutationBatch()
-    //val now = new Date()
-    //val t1 = tempDate.getTime()
 	val dateStr = temperatureRowKeyFormatter.format(tempDate)
 	val uuid = uuidForDate(tempDate)
 	//val t3 = uuidTsToDateTs(uuid.timestamp())
-	//println("t1: "+t1+", t3: "+t3)
-	val tempEvent = new TemperatureEvent(uuid, sensorAddress) // composite column
+	val tempEvent = new TemperatureEvent(uuid, sensor.name, sensor.address) // composite column
     m.withRow(CF_TEMPERATURE, dateStr)
     	.putColumn(tempEvent, tempValue, null)
     	
@@ -59,7 +58,7 @@ object TemperatureLog extends UUIDHelper {
     }
   }
   
-  def getTemperature: List[String] = {
+  /*def getTemperature: List[String] = {
     val temps = ListBuffer[String]()
     val dayStr = dayFormatter.format(new Date())
     val rowKey = "20130517-02"
@@ -83,7 +82,7 @@ object TemperatureLog extends UUIDHelper {
       
     }
     temps.toList
-  }
+  }*/
   
   /**
    * Get the temperatures by time range and sensor address
@@ -94,41 +93,47 @@ object TemperatureLog extends UUIDHelper {
   def getTemperatureByTimeRangeAndSensor(
       timeRange: Option[(Date, Date)] = Some(new Date(), new Date()), 
       sensorAddresses: Option[Seq[String]] = None): List[TemperatureLog] = {
-    val temps = ListBuffer[TemperatureLog]()
-    //val rowKey = "20130516-17"
-    val dayStr = dayFormatter.format(new Date())
-    val rowKeys = getRowKeysForRange(timeRange)
-    //println(rowKeys)
-    val rangeMin = rowKeys.head + minSecFormatter.format(timeRange.get._1) // yyyyMMdd-HHmmss
-    val rangeMax = rowKeys.last +  minSecFormatter.format(timeRange.get._2)
-    println("min: "+rangeMin+", max: "+rangeMax)
-    val uuid1 = uuidForDate(dateTimeFormatter.parse(rangeMin))
-    val uuid2 = uuidForDate(dateTimeFormatter.parse(rangeMax))
-    val result = AstyanaxConnector.keyspace.prepareQuery(CF_TEMPERATURE)
-    .getKeySlice(rowKeys)
-    .withColumnRange(
-      temperatureSerializer.makeEndpoint(uuid1, Equality.EQUAL).toBytes(),
-      temperatureSerializer.makeEndpoint(uuid2, Equality.LESS_THAN_EQUALS).toBytes(),
-      false, 100)
-    .execute()
-    val rows = result.getResult()
-    val rowIterator = rows.iterator()
-    while (rowIterator.hasNext()) {
-      val row = rowIterator.next()
-      val rowKey = row.getKey()
-      val columnIterator = row.getColumns().iterator()
-      while (columnIterator.hasNext()) {
-        val col = columnIterator.next()
-        val colName = col.getName()
-        val colVal = col.getStringValue()
-        val valueDate = new Date(uuidTsToDateTs(colName.getTs.timestamp()))
-        val valueDateStr = dateTimeFormatter.format(valueDate)
-        //println("row: "+rowKey+", col: ["+ valueDateStr + ", "+ colVal +"]")
-        temps += TemperatureLog(valueDateStr, colName.getSensorAddress, colVal)
-      }
+    try {
+	    val temps = ListBuffer[TemperatureLog]()
+	    //val rowKey = "20130516-17"
+	    val dayStr = dayFormatter.format(new Date())
+	    val rowKeys = getRowKeysForRange(timeRange)
+	    //println(rowKeys)
+	    val rangeMin = rowKeys.head + minSecFormatter.format(timeRange.get._1) // yyyyMMdd-HHmmss
+	    val rangeMax = rowKeys.last +  minSecFormatter.format(timeRange.get._2)
+	    println("min: "+rangeMin+", max: "+rangeMax)
+	    val uuid1 = uuidForDate(dateTimeFormatter.parse(rangeMin))
+	    val uuid2 = uuidForDate(dateTimeFormatter.parse(rangeMax))
+	    val result = AstyanaxConnector.keyspace.prepareQuery(CF_TEMPERATURE)
+	    .getKeySlice(rowKeys)
+	    .withColumnRange(
+	      temperatureSerializer.makeEndpoint(uuid1, Equality.EQUAL).toBytes(),
+	      temperatureSerializer.makeEndpoint(uuid2, Equality.LESS_THAN_EQUALS).toBytes(),
+	      false, 100)
+	    .execute()
+	    val rows = result.getResult()
+	    val rowIterator = rows.iterator()
+	    while (rowIterator.hasNext()) {
+	      val row = rowIterator.next()
+	      val rowKey = row.getKey()
+	      val columnIterator = row.getColumns().iterator()
+	      while (columnIterator.hasNext()) {
+	        val col = columnIterator.next()
+	        val colName = col.getName()
+	        val colVal = col.getStringValue()
+	        val valueDate = new Date(uuidTsToDateTs(colName.getTs.timestamp()))
+	        val valueDateStr = dateTimeFormatter.format(valueDate)
+	        //println("row: "+rowKey+", col: ["+ valueDateStr + ", "+ colVal +"]")
+	        //val sensor = Sensor.getById(colName.getSensorId)
+	        //assert(sensor.isDefined, {println("Sensor is not defined ! ["+ colName.getSensorId +"]")})
+	        temps += TemperatureLog(valueDateStr, Sensor(colName.getSensorName, colName.getSensorAddress), colVal)
+	      }
+	    }
+	    
+	    sensorAddresses.map(addressList => temps.toList.filter(tl => addressList.contains(tl.sensor.address))).getOrElse(temps.toList)
+    } catch {
+      case ae: AssertionError => List() // TODO - remove
     }
-    
-    sensorAddresses.map(addressList => temps.toList.filter(tl => addressList.contains(tl.sensorAddress))).getOrElse(temps.toList)
   }
   
   /**
@@ -187,14 +192,15 @@ object TemperatureLogJsonProtocol extends DefaultJsonProtocol {
   implicit object TemperatureLogJsonFormat extends RootJsonFormat[TemperatureLog] {
     def write(tl: TemperatureLog) = JsObject(
       "timestamp" -> JsString(tl.ts),
-      "sensor_address" -> JsString(tl.sensorAddress),
+      "sensor" -> tl.sensor.toJson,
       "temperature" -> JsString(tl.temperature)
     )
 
     def read(value: JsValue) = {
-      value.asJsObject.getFields("timestamp", "sensor_address", "temperature") match {
-        case Seq(JsString(ts), JsString(sensorAddress), JsString(temperature)) =>
-          TemperatureLog(ts, sensorAddress, temperature)
+      value.asJsObject.getFields("timestamp", "sensor", "temperature") match {
+        case Seq(JsString(ts), sensor, JsString(temperature)) =>
+          TemperatureLog(ts, sensor.convertTo[Sensor], temperature)
+          //TemperatureLog(ts, Sensor(sensorJs.get("name").get.convertTo[String],sensorJs.get("address").get.convertTo[String]), temperature)
         case _ => throw new DeserializationException("TemperatureLog expected")
       }
     }

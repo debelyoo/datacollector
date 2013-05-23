@@ -11,6 +11,8 @@ import ecol.util.Message
 import ecol.util.DateFormatHelper._
 import java.util.Date
 import ecol.cassandra.model.TemperatureLog
+import ecol.cassandra.model.Sensor
+import java.util.UUID
 
 trait PostService extends HttpService {
 
@@ -25,7 +27,7 @@ trait PostService extends HttpService {
 				  val tl = data.convertTo[TemperatureLog]
 				  val date = dateTimeFormatter.parse(tl.ts)
 				  //val date = labViewTsToJavaDate(tl.ts.toDouble) // if TS comes from labview
-				  AstyanaxConnector.insertWorker ! Message.InsertTemperature(date, tl.sensorAddress, tl.temperature)
+				  AstyanaxConnector.insertWorker ! Message.InsertTemperature(date, tl.sensor, tl.temperature)
 				  complete {
 				    val resp = "{ \"status\": \"POST successful\" }"
 				    resp.asJson.asJsObject

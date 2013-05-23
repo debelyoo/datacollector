@@ -5,6 +5,8 @@ import ecol.cassandra.AstyanaxConnector
 import java.util.Date
 import java.text.SimpleDateFormat
 import ecol.util.Message
+import ecol.cassandra.model.Sensor
+import java.util.UUID
 
 class DataPusher {
   val NB_VALUES = 1000
@@ -21,7 +23,10 @@ class DataPusher {
       val tempStr = "%.3f".format(temp)
       val addressId = nextInt(10)
       //println(tempStr +" - "+ addressId)
-      AstyanaxConnector.insertWorker ! Message.InsertTemperature(tempDate, "address" + addressId, tempStr)
+      AstyanaxConnector.insertWorker ! Message.InsertTemperature(
+          tempDate, 
+          Sensor("sensor"+addressId ,addressId.toString), 
+          tempStr)
     }
   }
 }
