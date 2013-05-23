@@ -28,5 +28,5 @@ class ApiServiceActor extends Actor with PutService with GetService with PostSer
 
   AstyanaxConnector.init() // initialize the DB connector
   
-  def receive = runRoute(getRoute ~ postRoute ~ putRoute)
+  def receive = runRoute(getRoute ~ postRoute)
 }
