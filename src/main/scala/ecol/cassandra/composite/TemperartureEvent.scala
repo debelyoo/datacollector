@@ -5,9 +5,9 @@ import java.util.UUID
 import spray.json._
 
 /**
- * Defines the composite type for the columns in temperature CF
+ * Defines the composite type for the columns in CF temperature, compass
  */
-class TemperatureEvent(
+class ColumnTimestampStringString(
     @Component(ordinal=0) ts: UUID, 
     @Component(ordinal=1) sensorName: String, 
     @Component(ordinal=1) sensorAddress: String) {

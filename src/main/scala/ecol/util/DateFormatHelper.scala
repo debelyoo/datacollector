@@ -8,7 +8,7 @@ object DateFormatHelper {
     val hourFormatter = new SimpleDateFormat("HH")
 	val minSecFormatter = new SimpleDateFormat("mmss")
 	val dateTimeFormatter = new SimpleDateFormat("yyyyMMdd-HHmmss")
-	val temperatureRowKeyFormatter = new SimpleDateFormat("yyyyMMdd-HH")
+	val rowKeyDayHourFormatter = new SimpleDateFormat("yyyyMMdd-HH")
 	
 	/**
 	 * Convert a labview timestamp to Java Date (in time zone UTC+01:00)

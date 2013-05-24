@@ -6,5 +6,6 @@ import ecol.cassandra.model.Sensor
 
 object Message {
   //case object Start
-  case class InsertTemperature (ts: Date, sensor: Sensor, tempVal: String)
+  case class InsertTemperatureLog (ts: Date, sensor: Sensor, tempVal: String)
+  case class InsertCompassLog (ts: Date, sensor: Sensor, compassVal: String)
 }

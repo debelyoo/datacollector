@@ -11,7 +11,7 @@ import java.util.UUID
 class DataPusher {
   val NB_VALUES = 1000
   
-  def pushSampleData {
+  /*def pushSampleData {
     for (i <- 1 to NB_VALUES) {
       val now = new Date()
       val day = new SimpleDateFormat("yyyyMMdd").format(now)
@@ -23,10 +23,10 @@ class DataPusher {
       val tempStr = "%.3f".format(temp)
       val addressId = nextInt(10)
       //println(tempStr +" - "+ addressId)
-      AstyanaxConnector.insertWorker ! Message.InsertTemperature(
+      AstyanaxConnector.insertWorker ! Message.InsertValue(
           tempDate, 
           Sensor("sensor"+addressId ,addressId.toString), 
           tempStr)
     }
-  }
+  }*/
 }

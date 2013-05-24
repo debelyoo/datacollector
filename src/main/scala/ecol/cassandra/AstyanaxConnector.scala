@@ -7,22 +7,9 @@ import com.netflix.astyanax.connectionpool.impl.ConnectionPoolConfigurationImpl
 import com.netflix.astyanax.connectionpool.impl.CountingConnectionPoolMonitor
 import com.netflix.astyanax.thrift.ThriftFamilyFactory
 import com.netflix.astyanax.Keyspace
-import com.netflix.astyanax.model.ColumnFamily
-import com.netflix.astyanax.serializers._
-import java.util.Date
-import java.text.SimpleDateFormat
-import java.util.UUID
-import com.netflix.astyanax.connectionpool.exceptions.ConnectionException
-import scala.collection.mutable.ListBuffer
-import com.netflix.astyanax.model.Equality
-import scala.collection.JavaConversions._
 import ecol.Boot
 import akka.actor.Props
 import akka.actor.ActorRef
-import java.util.Calendar
-import ecol.util.DateFormatHelper._
-import ecol.cassandra.model.TemperatureLog
-import ecol.cassandra.composite.TemperatureEvent
 import ecol.util.InsertWorker
 
 object AstyanaxConnector {
